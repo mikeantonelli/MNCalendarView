@@ -34,11 +34,17 @@
 @property(nonatomic,strong) Class dayCellClass;
 
 - (void)reloadData;
-- (void)registerUICollectionViewClasses; 
+- (void)registerUICollectionViewClasses;
+- (BOOL)nextYearForDateAvailable:(NSDate *)date;
+- (BOOL)previousYearForDateAvailable:(NSDate *)date;
+- (void)scrollToNextYearForDate:(NSDate *)date animated:(BOOL)animated;
+- (void)scrollToPreviousYearForDate:(NSDate *)date animated:(BOOL)animated;
 
 @end
 
-@protocol MNCalendarViewDelegate <NSObject>
+#import "MNCalendarHeaderView.h"
+
+@protocol MNCalendarViewDelegate <MNCalendarHeaderViewDelegate>
 
 @optional
 

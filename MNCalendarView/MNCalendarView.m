@@ -197,6 +197,82 @@
   return enabled;
 }
 
+- (BOOL)nextYearForDateAvailable:(NSDate *)date
+{
+    return ([self nextYearsIndexPathForDate:date] != nil);
+}
+
+- (BOOL)previousYearForDateAvailable:(NSDate *)date
+{
+    return ([self previousYearsIndexPathForDate:date] != nil);
+}
+
+- (void)scrollToNextYearForDate:(NSDate *)date animated:(BOOL)animated
+{
+    [self scrollToIndexPath:[self nextYearsIndexPathForDate:date] animated:animated];
+}
+
+- (void)scrollToPreviousYearForDate:(NSDate *)date animated:(BOOL)animated
+{
+    [self scrollToIndexPath:[self previousYearsIndexPathForDate:date] animated:animated];
+}
+
+- (void)scrollToIndexPath:(NSIndexPath *)indexPath animated:(BOOL)animated
+{
+    if (!indexPath)
+    {
+        return;
+    }
+    
+    if ([self.collectionView numberOfItemsInSection:indexPath.section] > 0) {
+        
+        UICollectionViewLayoutAttributes *attributes = [self.collectionView layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForItem:0 inSection:indexPath.section]];
+        
+        CGRect sectionRect = CGRectMake(0, attributes.frame.origin.y - 44, self.collectionView.frame.size.width, self.collectionView.frame.size.height); // 44 is height of the header view
+        
+        [self.collectionView scrollRectToVisible:sectionRect animated:YES];
+        
+    }
+}
+
+- (NSIndexPath *)nextYearsIndexPathForDate:(NSDate *)date
+{
+    return [self indexPathForDate:date yearChange:1];
+}
+
+- (NSIndexPath *)previousYearsIndexPathForDate:(NSDate *)date
+{
+    return [self indexPathForDate:date yearChange:-1];
+}
+
+- (NSIndexPath *)indexPathForDate:(NSDate *)date yearChange:(NSInteger)yearChange
+{
+    __block NSUInteger index = NSNotFound;
+    __block NSDateComponents *components = [self.calendar components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit|NSWeekdayCalendarUnit
+                                                            fromDate:date];
+    
+    [self.monthDates enumerateObjectsUsingBlock:^(NSDate *newDate, NSUInteger idx, BOOL * _Nonnull stop) {
+        
+        NSDateComponents *newComponents = [self.calendar components:NSYearCalendarUnit|NSMonthCalendarUnit|NSDayCalendarUnit|NSWeekdayCalendarUnit
+                                                           fromDate:newDate];
+        
+        if (components.day == newComponents.day
+            && components.month == newComponents.month
+            && components.year+yearChange == newComponents.year)
+        {
+            index = idx;
+            *stop = YES;
+        }
+    }];
+    
+    if (index == NSNotFound)
+    {
+        return nil;
+    }
+    
+    return [NSIndexPath indexPathForItem:0 inSection:index];
+}
+
 #pragma mark - UICollectionViewDataSource
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
@@ -211,9 +287,11 @@
                                        withReuseIdentifier:MNCalendarHeaderViewIdentifier
                                               forIndexPath:indexPath];
 
+  headerView.delegate = self.delegate;
   headerView.backgroundColor = self.collectionView.backgroundColor;
+  headerView.date = self.monthDates[indexPath.section];
   headerView.titleLabel.text = [self.monthFormatter stringFromDate:self.monthDates[indexPath.section]];
-
+  
   return headerView;
 }
 
